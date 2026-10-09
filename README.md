@@ -1,1 +1,1 @@
-# Web-shogi
+# Shogi-web
