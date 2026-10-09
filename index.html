@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#17231d">
+<meta name="theme-color" content="#f4efe3">
 <title>Shogi Web — オンライン将棋</title>
 <style>
 #homeMenu{width:min(560px,calc(100% - 28px));margin:22px auto 40px;padding:24px;background:linear-gradient(150deg,#1d2b22,#17221b);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 48px #0005;text-align:center}#homeMenu h2{font-size:18px;margin:0 0 8px}#homeMenu .menu-sub{font-size:13px;color:var(--muted);margin:0 0 22px}#homeMenu .menu-options{display:grid;gap:12px}#homeMenu .menu-choice{width:100%;padding:17px 14px;text-align:left;display:flex;align-items:center;gap:14px;border-radius:14px;background:#223329}#homeMenu .menu-choice strong{display:block;font-size:16px}#homeMenu .menu-choice small{display:block;color:#c1cec3;font-weight:400;margin-top:4px}#homeMenu .menu-icon{font-size:25px;width:42px;text-align:center;color:var(--gold)}#practiceChoices{display:none;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}#practiceChoices button{width:100%;padding:12px}.back-home{margin-left:auto}.home-hidden{display:none!important}.single-panel #gamePanel{grid-column:1/-1}.single-panel #gamePanel .board-wrap{width:min(100%,650px)}
@@ -23,17 +23,55 @@ input,button{font:inherit;border-radius:10px;border:1px solid #435848;padding:10
 .captures{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.hand{border:1px solid var(--line);border-radius:12px;padding:9px;min-height:68px}.hand-title{font-size:12px;color:var(--muted);margin-bottom:6px}.hand-items{display:flex;flex-wrap:wrap;gap:5px}.hand button{background:#344332;color:#f7e6bd;padding:5px 7px;min-width:34px}.hand button.active{outline:2px solid var(--gold)}.hand button:disabled{opacity:.35}
 .rules{font-size:12px;color:var(--muted);line-height:1.7;margin-top:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 @media(max-width:760px){main{grid-template-columns:1fr;padding:10px}.panel{padding:13px}header{padding-top:18px}.board-wrap{width:min(100%,540px)}.piece{font-size:clamp(15px,5.2vw,29px)}}
+/* Bright, high-contrast shogi board and compact controls */
+:root{color-scheme:light;--bg:#f7f4ed;--panel:#fffdf8;--panel2:#f0e8d8;--line:#d5c7ad;--gold:#9a6418;--text:#27251f;--muted:#625d52;--wood:#e6c17d;--wood2:#d6a95c}
+body{background:radial-gradient(ellipse at top,#fffdf8 0,#eee8dc 78%);color:var(--text)}
+.panel,#homeMenu{background:linear-gradient(150deg,#fffdf8,#f5efe3);border-color:#d8ccb6;box-shadow:0 8px 24px #59452218}
+h2,.turn{color:#6c4811}
+#homeMenu .menu-choice{background:#f2e7d1;color:#28251e;border-color:#cdbb98}
+#homeMenu .menu-choice small{color:#5d574c}
+input,button,select{background:#fffdf8;color:#29261f;border-color:#b7a98f}
+button{background:#efe2c5;border-color:#c2a878}
+button.primary{background:#e0b85f;color:#30220a;border-color:#a77b2c}
+.status{background:#f0eadf;color:#504b42}.status.good{color:#216b32}.status.bad{color:#9b2920}
+.board-stage{display:grid;grid-template-columns:minmax(74px,.23fr) minmax(0,1fr) minmax(74px,.23fr);align-items:stretch;gap:8px;width:100%;margin:0 auto}
+.board-wrap{width:100%;min-width:0;margin:0}
+.board{background:#dcb66f;border-color:#95662b;box-shadow:0 5px 14px #59452220}
+.cell{background:linear-gradient(145deg,#f4d99f,#e5bf7b);border-color:#aa7c3d;color:#2d2116}
+.cell.selected{background:#fff0ae;box-shadow:inset 0 0 0 3px #b47b22}
+.cell.legal:after{background:#39824bbd;width:30%;height:30%;border:1px solid #fff9}
+.cell.last{background:#f0d18b}
+.piece{display:inline-flex;align-items:center;justify-content:center;width:82%;height:88%;font-size:clamp(15px,3vw,29px);background:linear-gradient(145deg,#fff0c9,#e8c27c);border:1px solid #a77a3d;border-radius:3px 3px 6px 6px;box-shadow:0 2px 2px #593d1d40;color:#292116;text-shadow:0 1px #fff7}
+.piece.white{background:linear-gradient(145deg,#fffdf5,#e5dfd0);border-color:#7e8a99;color:#28364b}
+.piece.promoted{color:#b22f20}
+.side-hand{margin:0;min-width:0;display:flex;flex-direction:column;gap:7px;padding:8px 5px;background:#f5eddf;border-color:#d0c0a3}
+.side-hand .hand-title{text-align:center;color:#514735;line-height:1.4}
+.side-hand .hand-items{display:flex;flex-direction:column;align-items:stretch;gap:5px}
+.side-hand button{white-space:normal;min-width:0;padding:7px 2px;background:#f1d8a4;color:#352610;border-color:#c2a16b}
+.side-hand button.active{outline:3px solid #a76d19}
+#handWWrap{grid-column:1;grid-row:1}#handBWrap{grid-column:3;grid-row:1}
+.time-settings{display:grid;grid-template-columns:1fr auto;align-items:center;gap:7px 12px;text-align:left;background:#f2eadb;padding:12px;border:1px solid #d7c6a7;border-radius:12px;margin-bottom:16px}
+.time-settings label{font-weight:700;font-size:13px}.time-settings select{min-width:90px}.time-settings small{grid-column:1/-1;color:#625b4d}
+.time-settings-inline{background:#f2eadb;border:1px solid #d7c6a7;border-radius:10px;padding:8px}.time-settings-inline label{font-size:12px;font-weight:700}.time-settings-inline select{margin-left:auto}
+.clock-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}.clock{padding:8px 10px;background:#f3ead8;border:1px solid #d6c29c;border-radius:10px;color:#54432a;font-size:12px;display:flex;justify-content:space-between;align-items:center}.clock strong{font-size:17px;font-variant-numeric:tabular-nums}.clock.active{background:#ffedbb;border-color:#b37b23;box-shadow:inset 0 0 0 1px #b37b23}
+.game-tools{margin-top:10px;border:1px solid #d6c7af;border-radius:10px;background:#f7f1e6;padding:9px 11px}.game-tools summary{cursor:pointer;font-weight:700;font-size:13px;color:#5a482d}.game-tools .actions{margin-top:8px}
+.primary-actions{align-items:center}.primary-actions .back-home{margin-left:auto}
+#moveLog .move-entry{background:#f1eadf;color:#5b5348}#moveLog .move-entry.latest{color:#78510e;border-color:#b58b43}
+.site-modal[hidden]{display:none!important}.site-modal{position:fixed;inset:0;z-index:1000;background:#29241cb3;display:flex;align-items:center;justify-content:center;padding:16px}.site-modal-card{width:min(430px,100%);max-height:85vh;overflow:auto;background:#fffdf8;border:1px solid #cdbb99;border-radius:16px;padding:18px;color:#29261f;box-shadow:0 16px 48px #0004}.site-modal-card h2{margin-top:0}.site-modal-card input{width:100%;margin:8px 0}.saved-record{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e5dac7}.saved-record button{padding:6px 8px;font-size:12px}
+@media(max-width:560px){.board-stage{grid-template-columns:minmax(56px,.21fr) minmax(0,1fr) minmax(56px,.21fr);gap:5px}.side-hand{padding:5px 3px}.side-hand .hand-title{font-size:10px}.side-hand button{font-size:11px;padding:6px 1px}.piece{font-size:clamp(13px,4vw,24px)}.actions button{padding:8px 9px}.time-settings-inline{width:100%}}
+@media(max-width:380px){.board-stage{grid-template-columns:minmax(48px,.19fr) minmax(0,1fr) minmax(48px,.19fr);gap:3px}.side-hand .hand-title{font-size:9px}.side-hand button{font-size:10px}}
+
 </style>
 </head>
 <body>
 <header><h1>SHOGI <span style="color:var(--gold)">WEB</span> <span id="updateNumber" style="font-size:.55em;letter-spacing:0;color:var(--muted);vertical-align:middle">6</span></h1><p>将棋を指そう</p><div class="row home-hidden" style="justify-content:center;margin-top:12px"><button id="onlineModeBtn" class="small primary">オンライン対局</button><button id="localModeBtn" class="small">対面対局（1台で対局）</button></div></header>
-<section id="homeMenu"><h2>対局モードを選択</h2><p class="menu-sub">遊び方を選んでください</p><div class="menu-options"><button id="menuLocalBtn" class="menu-choice"><span class="menu-icon">♟</span><span><strong>対面対局</strong><small>1台の端末で2人が対局</small></span></button><button id="menuPracticeBtn" class="menu-choice"><span class="menu-icon">◇</span><span><strong>練習</strong><small>CPU対戦または自由練習</small></span></button><button id="menuOnlineBtn" class="menu-choice"><span class="menu-icon">◎</span><span><strong>オンライン対局</strong><small>部屋コードで離れた相手と対局</small></span></button></div><div id="practiceChoices"><div id="practiceSettings"><label>あなたの手番<select id="cpuSideSelect"><option value="b">先手</option><option value="w">後手</option></select></label><label>CPUの強さ<select id="cpuLevelSelect"><option value="easy">弱い</option><option value="normal" selected>普通</option><option value="hard">強い</option></select></label></div><button id="menuCpuBtn" class="primary">CPUと対戦</button><button id="menuFreeBtn">自由練習（両方の手を操作）</button><button id="practiceBackBtn" class="small">戻る</button></div></section>
+<section id="homeMenu"><h2>対局モードを選択</h2><p class="menu-sub">遊び方を選んでください</p><div class="time-settings"><label for="timeLimitSelect">持ち時間（1人あたり）</label><select id="timeLimitSelect"><option value="0">なし</option><option value="60">1分</option><option value="180">3分</option><option value="300" selected>5分</option><option value="600">10分</option><option value="900">15分</option></select><small>CPU・対面対局・オンライン対局に適用</small></div><div class="menu-options"><button id="menuLocalBtn" class="menu-choice"><span class="menu-icon">♟</span><span><strong>対面対局</strong><small>1台の端末で2人が対局</small></span></button><button id="menuPracticeBtn" class="menu-choice"><span class="menu-icon">◇</span><span><strong>練習</strong><small>CPU対戦または自由練習</small></span></button><button id="menuOnlineBtn" class="menu-choice"><span class="menu-icon">◎</span><span><strong>オンライン対局</strong><small>部屋コードで離れた相手と対局</small></span></button></div><div id="practiceChoices"><div id="practiceSettings"><label>あなたの手番<select id="cpuSideSelect"><option value="b">先手</option><option value="w">後手</option></select></label><label>CPUの強さ<select id="cpuLevelSelect"><option value="easy">弱い</option><option value="normal" selected>普通</option><option value="hard">強い</option></select></label></div><button id="menuCpuBtn" class="primary">CPUと対戦</button><button id="menuFreeBtn">自由練習（両方の手を操作）</button><button id="practiceBackBtn" class="small">戻る</button></div></section>
 <main id="gameArea" style="display:none">
 <section class="panel" id="onlinePanel">
 <h2>ONLINE MATCH</h2>
 <div class="connection">
 <div class="row"><button id="hostBtn" class="primary">対局部屋を作る（先手）</button><button id="copyBtn" class="small" disabled>コードをコピー</button><button id="reconnectBtn" class="small" disabled>再接続</button></div>
-<div class="row"><input id="peerId" placeholder="相手の部屋コードを入力" autocomplete="off"><button id="joinBtn">参加（後手）</button></div>
+<div class="row"><input id="peerId" placeholder="相手の部屋コードを入力" autocomplete="off"><button id="joinBtn">参加（後手）</button></div><div class="row time-settings-inline"><label for="onlineTimeLimitSelect">この部屋の持ち時間</label><select id="onlineTimeLimitSelect"><option value="0">なし</option><option value="60">1分</option><option value="180">3分</option><option value="300" selected>5分</option><option value="600">10分</option><option value="900">15分</option></select></div>
 <div class="status" id="netStatus">「対局部屋を作る」を押して、表示されたコードを相手に送ってください。</div>
 <div class="row"><span class="meta">あなたのコード：</span><strong id="myId" style="overflow-wrap:anywhere">未作成</strong></div>
 </div>
@@ -41,15 +79,19 @@ input,button{font:inherit;border-radius:10px;border:1px solid #435848;padding:10
 </section>
 <section class="panel" id="gamePanel">
 <div class="gamehead"><div><div class="turn" id="turnLabel">先手の番</div><div class="meta" id="gameMeta">相手と接続して対局開始</div></div><button id="resetBtn" class="small">盤面を初期化</button></div>
+<div class="clock-bar"><div class="clock" id="clockB">先手 <strong>5:00</strong></div><div class="clock" id="clockW">後手 <strong>5:00</strong></div></div>
+<div class="board-stage">
+<div class="hand side-hand" id="handWWrap"><div class="hand-title">後手の持ち駒（相手）</div><div class="hand-items" id="handW"></div></div>
 <div class="board-wrap"><div class="board" id="board" aria-label="将棋盤"></div></div>
-<div class="captures">
-<div class="hand"><div class="hand-title">先手の持ち駒</div><div class="hand-items" id="handB"></div></div>
-<div class="hand"><div class="hand-title">後手の持ち駒</div><div class="hand-items" id="handW"></div></div>
+<div class="hand side-hand" id="handBWrap"><div class="hand-title">先手の持ち駒（自分）</div><div class="hand-items" id="handB"></div></div>
 </div>
-<div class="actions"><button id="cancelBtn" class="small">選択解除</button><button id="declareBtn" class="small">入玉宣言</button><button id="undoBtn" class="small">1手戻す</button><button id="flipBoardBtn" class="small">盤面を回転</button><button id="swapSidesBtn" class="small">先後を入れ替えて再開始</button><button id="saveRecordBtn" class="small">棋譜を保存</button><button id="loadRecordBtn" class="small">棋譜を読み込む</button><input id="recordFileInput" type="file" accept="application/json,.json" hidden><button id="returnMenuBtn" class="small back-home">メニューへ戻る</button><span class="meta" id="moveHint">自分の駒を選んで移動先をタップ</span></div><div class="row" style="margin-top:8px"><span class="meta">指し手の履歴</span><span class="meta" id="recordCount">0手</span></div><div id="moveLog" aria-live="polite"></div>
+<div class="actions primary-actions"><button id="cancelBtn" class="small">選択解除</button><button id="declareBtn" class="small">入玉宣言</button><button id="undoBtn" class="small">1手戻す</button><button id="returnMenuBtn" class="small back-home">メニューへ戻る</button></div>
+<details class="game-tools"><summary>その他の操作・棋譜</summary><div class="actions"><button id="swapSidesBtn" class="small">先後を入れ替えて再開始</button><button id="saveRecordBtn" class="small">棋譜を保存</button><button id="loadRecordBtn" class="small">保存済み棋譜を読み込む</button><input id="recordFileInput" type="file" accept="application/json,.json" hidden></div></details>
+<div class="meta" id="moveHint">自分の駒を選んで移動先をタップ</div><div class="row" style="margin-top:8px"><span class="meta">指し手の履歴</span><span class="meta" id="recordCount">0手</span></div><div id="moveLog" aria-live="polite"></div>
 </section>
 </main>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<div id="siteModal" class="site-modal" hidden><div class="site-modal-card" role="dialog" aria-modal="true" aria-labelledby="siteModalTitle"><h2 id="siteModalTitle">確認</h2><div id="siteModalBody"></div><div id="siteModalActions" class="actions"></div></div></div>
 <script>
 (() => {
 "use strict";
