@@ -23,6 +23,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: |
+          python3 -c 'from pathlib import Path; s=Path("index.html").read_text(); Path("/tmp/shogi-script.js").write_text(s.split("<script>")[-1].split("</script>")[0])'
+          node --check /tmp/shogi-script.js
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
