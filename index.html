@@ -1,1 +1,116 @@
-
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#17231d">
+<title>Shogi Web — オンライン将棋</title>
+<style>
+:root{color-scheme:dark;--bg:#101713;--panel:#1b2820;--panel2:#23342a;--line:#34483a;--gold:#d8b46a;--text:#f2f2e9;--muted:#b6c3b7;--wood:#d9ad68;--wood2:#c9944c}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#23372a 0,#101713 58%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;min-height:100vh}
+header{padding:22px 16px 12px;text-align:center}h1{margin:0;font-size:clamp(24px,4vw,34px);letter-spacing:.08em}header p{margin:7px 0 0;color:var(--muted);font-size:13px}
+main{width:min(1120px,100%);margin:auto;padding:12px 16px 32px;display:grid;grid-template-columns:minmax(280px,1fr) minmax(280px,.88fr);gap:18px}
+.panel{background:linear-gradient(150deg,#1d2b22,#17221b);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 32px #0003;min-width:0}
+h2{font-size:15px;margin:0 0 12px;color:#f0d59b;letter-spacing:.05em}
+.connection{display:grid;gap:10px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row input{flex:1;min-width:130px}
+input,button{font:inherit;border-radius:10px;border:1px solid #435848;padding:10px 12px;background:#101a14;color:var(--text)}button{cursor:pointer;background:#304b38;border-color:#496b51;font-weight:650;transition:.15s}button:hover{filter:brightness(1.15)}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:#d6b36d;color:#1c241b;border-color:#e8ca88}.small{font-size:12px;padding:7px 10px}.status{border-radius:10px;background:#101a14;padding:10px 12px;color:var(--muted);font-size:13px;min-height:40px;line-height:1.5}.status.good{color:#b8edc1}.status.bad{color:#ffc1b5}
+.gamehead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.turn{font-weight:800;color:#f0d59b}.meta{font-size:12px;color:var(--muted)}
+.board-wrap{width:min(100%,570px);margin:0 auto}.board{display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:1;background:var(--wood);border:3px solid #986a32;box-shadow:0 8px 20px #0004;touch-action:manipulation}
+.cell{border:1px solid #9d7138;background:linear-gradient(145deg,#e8c17d,#d8ab62);display:flex;align-items:center;justify-content:center;position:relative;padding:0;min-width:0;min-height:0;border-radius:0;color:#2d2116}
+.cell.selected{background:#f7df94;box-shadow:inset 0 0 0 3px #fff0a6}.cell.legal:after{content:"";width:24%;height:24%;border-radius:50%;background:#526f42aa;position:absolute}.cell.last{background:#e7c97c}.piece{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-weight:900;font-size:clamp(16px,3.5vw,31px);line-height:1;position:relative;z-index:1;user-select:none}.piece.white{transform:rotate(180deg)}.piece.promoted{color:#8b2f1f}.cell .coord{position:absolute;right:2px;top:1px;font-size:8px;color:#74502a;opacity:.55}
+.captures{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.hand{border:1px solid var(--line);border-radius:12px;padding:9px;min-height:68px}.hand-title{font-size:12px;color:var(--muted);margin-bottom:6px}.hand-items{display:flex;flex-wrap:wrap;gap:5px}.hand button{background:#344332;color:#f7e6bd;padding:5px 7px;min-width:34px}.hand button.active{outline:2px solid var(--gold)}.hand button:disabled{opacity:.35}
+.rules{font-size:12px;color:var(--muted);line-height:1.7;margin-top:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media(max-width:760px){main{grid-template-columns:1fr;padding:10px}.panel{padding:13px}header{padding-top:18px}.board-wrap{width:min(100%,540px)}.piece{font-size:clamp(15px,5.2vw,29px)}}
+</style>
+</head>
+<body>
+<header><h1>SHOGI <span style="color:var(--gold)">WEB</span></h1><p>離れた相手とも、部屋コードでオンライン対局</p></header>
+<main>
+<section class="panel">
+<h2>ONLINE MATCH</h2>
+<div class="connection">
+<div class="row"><button id="hostBtn" class="primary">対局部屋を作る（先手）</button><button id="copyBtn" class="small" disabled>コードをコピー</button></div>
+<div class="row"><input id="peerId" placeholder="相手の部屋コードを入力" autocomplete="off"><button id="joinBtn">参加（後手）</button></div>
+<div class="status" id="netStatus">「対局部屋を作る」を押して、表示されたコードを相手に送ってください。</div>
+<div class="row"><span class="meta">あなたのコード：</span><strong id="myId" style="overflow-wrap:anywhere">未作成</strong></div>
+</div>
+<div class="rules">通信は PeerJS の公開接続仲介サービスと WebRTC を利用します。両方の端末でこのページを開き、片方が部屋を作り、もう片方がコードを入力します。ネットワークや仲介サービスの状態によって接続できない場合があります。</div>
+</section>
+<section class="panel">
+<div class="gamehead"><div><div class="turn" id="turnLabel">先手の番</div><div class="meta" id="gameMeta">相手と接続して対局開始</div></div><button id="resetBtn" class="small">盤面を初期化</button></div>
+<div class="board-wrap"><div class="board" id="board" aria-label="将棋盤"></div></div>
+<div class="captures">
+<div class="hand"><div class="hand-title">先手の持ち駒</div><div class="hand-items" id="handB"></div></div>
+<div class="hand"><div class="hand-title">後手の持ち駒</div><div class="hand-items" id="handW"></div></div>
+</div>
+<div class="actions"><button id="cancelBtn" class="small">選択解除</button><span class="meta" id="moveHint">自分の駒を選んで移動先をタップ</span></div>
+</section>
+</main>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(() => {
+const names={K:"玉",R:"飛",B:"角",G:"金",S:"銀",N:"桂",L:"香",P:"歩"};
+const glyph={K:"玉",R:"飛",B:"角",G:"金",S:"銀",N:"桂",L:"香",P:"歩","+R":"龍","+B":"馬","+S":"全","+N":"圭","+L":"杏","+P":"と"};
+const initial=[
+["L","N","S","G","K","G","S","N","L"],
+[null,"R",null,null,null,null,null,"B",null],
+["P","P","P","P","P","P","P","P","P"],
+[null,null,null,null,null,null,null,null,null],
+[null,null,null,null,null,null,null,null,null],
+[null,null,null,null,null,null,null,null,null],
+["P","P","P","P","P","P","P","P","P"],
+[null,"B",null,null,null,null,null,"R",null],
+["L","N","S","G","K","G","S","N","L"]
+];
+let board=[], hands={b:[],w:[]}, turn="b", role=null, peer=null, conn=null, selected=null, selectedHand=null, legal=[], lastMove=null, gameStarted=false, moveNo=1;
+const $=id=>document.getElementById(id);
+const clone=x=>JSON.parse(JSON.stringify(x));
+function fresh(){board=Array.from({length:9},()=>Array(9).fill(null));for(let r=0;r<9;r++)for(let c=0;c<9;c++){const p=initial[r][c];if(p){let side=r<3?"w":"b";board[r][c]={p,s:side};}}hands={b:[],w:[]};turn="b";selected=null;selectedHand=null;legal=[];lastMove=null;moveNo=1;render();}
+function status(msg,type=""){const el=$("netStatus");el.textContent=msg;el.className="status "+type;}
+function send(obj){if(conn&&conn.open)conn.send(obj);}
+function snapshot(){return {board,hands,turn,lastMove,moveNo};}
+function applySnapshot(s){board=s.board;hands=s.hands;turn=s.turn;lastMove=s.lastMove||null;moveNo=s.moveNo||1;selected=null;selectedHand=null;legal=[];render();}
+function connectEvents(c,isHost){conn=c;c.on("open",()=>{gameStarted=true;status("接続しました。対局を開始できます。","good");$("gameMeta").textContent="オンライン対局中";if(isHost)send({type:"state",state:snapshot()});else send({type:"ready"});render();});c.on("data",m=>{if(m.type==="state"){applySnapshot(m.state);gameStarted=true;}else if(m.type==="move"){if(m.move)applyMove(m.move,false);}else if(m.type==="reset"){fresh();gameStarted=true;}else if(m.type==="ready"){send({type:"state",state:snapshot()});}else if(m.type==="resync"){send({type:"state",state:snapshot()});}});c.on("close",()=>{gameStarted=false;status("相手との接続が切れました。再接続するには部屋を作り直してください。","bad");$("gameMeta").textContent="切断";render();});c.on("error",e=>status("通信エラー："+(e.message||"接続を確認してください"),"bad"));}
+$("hostBtn").onclick=()=>{if(!window.Peer){status("通信ライブラリを読み込めませんでした。ページを再読み込みしてください。","bad");return;}if(peer)peer.destroy();role="b";gameStarted=false;fresh();peer=new Peer();status("対局部屋を準備しています…");peer.on("open",id=>{$("myId").textContent=id;$("copyBtn").disabled=false;status("部屋を作成しました。コードを相手に送ってください。","good");});peer.on("connection",c=>{if(conn&&conn.open){c.close();return;}connectEvents(c,true);status("相手の接続を待っています…");});peer.on("error",e=>status("部屋作成エラー："+(e.message||"時間をおいて再試行してください"),"bad"));};
+$("copyBtn").onclick=async()=>{const id=$("myId").textContent;if(!id||id==="未作成")return;try{await navigator.clipboard.writeText(id);status("部屋コードをコピーしました。","good");}catch(e){$("peerId").value=id;status("コードを入力欄に表示しました。長押ししてコピーしてください。");}};
+$("joinBtn").onclick=()=>{const id=$("peerId").value.trim();if(!id){status("相手の部屋コードを入力してください。","bad");return;}if(!window.Peer){status("通信ライブラリを読み込めませんでした。再読み込みしてください。","bad");return;}if(peer)peer.destroy();role="w";gameStarted=false;fresh();peer=new Peer();status("接続しています…");peer.on("open",myid=>{$("myId").textContent=myid;conn=peer.connect(id,{reliable:true});connectEvents(conn,false);});peer.on("error",e=>status("接続エラー："+(e.message||"コードを確認してください"),"bad"));};
+$("resetBtn").onclick=()=>{if(!confirm("盤面を初期状態に戻しますか？"))return;if(conn&&conn.open){send({type:"reset"});}fresh();};
+$("cancelBtn").onclick=()=>{selected=null;selectedHand=null;legal=[];render();};
+function ownerAt(r,c){return board[r]?.[c]?.s||null;}
+function forward(s){return s==="b"?-1:1;}
+function inBoard(r,c){return r>=0&&r<9&&c>=0&&c<9;}
+function promoted(p){return p[0]==="+";}
+function base(p){return promoted(p)?p.slice(1):p;}
+function canPromote(p,s,r,toR){return ["R","B","S","N","L","P"].includes(base(p))&&(s==="b"?(r<=2||toR<=2):(r>=6||toR>=6));}
+function mandatory(p,s,r){const b=base(p),f=forward(s);if((b==="P"||b==="L")&&(r+f<0||r+f>8))return true;if(b==="N"&&(r+2*f<0||r+2*f>8))return true;return false;}
+function movesFor(r,c){const piece=board[r][c];if(!piece)return [];const {p,s}=piece,b=base(p),f=forward(s),out=[];const add=(dr,dc,slide=false)=>{let nr=r+dr,nc=c+dc;while(inBoard(nr,nc)){if(ownerAt(nr,nc)===s)break;out.push({r:nr,c:nc});if(ownerAt(nr,nc)||!slide)break;nr+=dr;nc+=dc;}};
+if(b==="K"){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)if(dr||dc)add(dr,dc);}
+else if(b==="G"||["+S","+N","+L","+P"].includes(p)){[[-1,0],[0,-1],[0,1],[1,0],[-1,-1],[-1,1]].forEach(([dr,dc])=>add(dr*f,dc));if(s==="w"){/* gold directions rotate */}}
+else if(b==="S"){[[-1,0],[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr,dc])=>add(dr*f,dc));}
+else if(b==="N"){add(2*f,-1);add(2*f,1);}
+else if(b==="L")add(f,0,true);
+else if(b==="P")add(f,0);
+else if(b==="R"){add(1,0,true);add(-1,0,true);add(0,1,true);add(0,-1,true);if(p==="+R"){add(1,1);add(1,-1);add(-1,1);add(-1,-1);}}
+else if(b==="B"){add(1,1,true);add(1,-1,true);add(-1,1,true);add(-1,-1,true);if(p==="+B"){add(1,0);add(-1,0);add(0,1);add(0,-1);}}
+return out.filter(m=>ownerAt(m.r,m.c)!==s);}
+function goldMoves(r,c,s){const out=[],f=forward(s);[[-1,0],[0,-1],[0,1],[1,0],[-1,-1],[-1,1]].forEach(([dr,dc])=>{const rr=r+dr*f,cc=c+dc;if(inBoard(rr,cc)&&ownerAt(rr,cc)!==s)out.push({r:rr,c:cc});});return out;}
+function movesForFixed(r,c){const p=board[r][c];if(!p)return [];if(["G","+S","+N","+L","+P"].includes(p.p))return goldMoves(r,c,p.s);return movesFor(r,c);}
+function attacked(r,c,bySide){for(let rr=0;rr<9;rr++)for(let cc=0;cc<9;cc++){const p=board[rr][cc];if(p&&p.s===bySide&&movesForFixed(rr,cc).some(m=>m.r===r&&m.c===c))return true;}return false;}
+function kingSafe(side){let kr=-1,kc=-1;for(let r=0;r<9;r++)for(let c=0;c<9;c++)if(board[r][c]?.p==="K"&&board[r][c].s===side){kr=r;kc=c;}return kr<0||!attacked(kr,kc,side==="b"?"w":"b");}
+function validMoves(r,c){const p=board[r][c];return movesForFixed(r,c).filter(m=>{const save=board[m.r][m.c];board[m.r][m.c]=p;board[r][c]=null;const safe=kingSafe(p.s);board[r][c]=p;board[m.r][m.c]=save;return safe;});}
+function dropMoves(p,s){const out=[];for(let r=0;r<9;r++)for(let c=0;c<9;c++){if(board[r][c])continue;const b=base(p);if((b==="P"||b==="L")&&(s==="b"?r===0:r===8))continue;if(b==="N"&&(s==="b"?r<=1:r>=7))continue;if(b==="P"){let found=false;for(let rr=0;rr<9;rr++)if(board[rr][c]?.s===s&&base(board[rr][c].p)==="P"&&!promoted(board[rr][c].p))found=true;if(found)continue;}out.push({r,c,drop:p});}return out;}
+function selectCell(r,c){if(!gameStarted){status("先にオンライン対局へ接続してください。","bad");return;}if(turn!==role){$("moveHint").textContent="相手の番です";return;}const piece=board[r][c];if(selectedHand){const dest=legal.find(m=>m.r===r&&m.c===c);if(dest){applyMove({from:null,to:{r,c},drop:selectedHand,side:role},true);return;}if(piece&&piece.s===role){selected={r,c};selectedHand=null;legal=validMoves(r,c);render();}return;}
+if(selected){const dest=legal.find(m=>m.r===r&&m.c===c);if(dest){let promote=false;const p=board[selected.r][selected.c].p;if(canPromote(p,role,selected.r,r)){const must=mandatory(p,role,r);if(must)promote=true;else promote=confirm("成りますか？\n「OK」=成る / 「キャンセル」=成らない");}applyMove({from:{...selected},to:{r,c},promote,side:role},true);return;}}
+if(piece&&piece.s===role){selected={r,c};selectedHand=null;legal=validMoves(r,c);render();}else{selected=null;legal=[];render();}}
+function applyMove(m,local){if(m.side!==turn)return;let captured=null;if(m.drop){const idx=hands[m.side].indexOf(m.drop);if(idx<0)return;hands[m.side].splice(idx,1);board[m.to.r][m.to.c]={p:m.drop,s:m.side};}else{const p=board[m.from.r][m.from.c];if(!p||p.s!==m.side)return;captured=board[m.to.r][m.to.c];if(captured){hands[m.side].push(base(captured.p));}let next=m.promote?"+"+base(p.p):p.p;board[m.to.r][m.to.c]={p:next,s:p.s};board[m.from.r][m.from.c]=null;}
+lastMove={from:m.from,to:m.to};turn=turn==="b"?"w":"b";moveNo++;selected=null;selectedHand=null;legal=[];render();if(local)send({type:"move",move:m});if(!kingExists(turn)){status((m.side==="b"?"先手":"後手")+"の勝ちです。","good");gameStarted=false;}else if(inCheck(turn)){status((turn==="b"?"先手":"後手")+"は王手です。","good");}}
+function kingExists(side){for(let r=0;r<9;r++)for(let c=0;c<9;c++)if(board[r][c]?.p==="K"&&board[r][c].s===side)return true;return false;}
+function inCheck(side){let kr=-1,kc=-1;for(let r=0;r<9;r++)for(let c=0;c<9;c++)if(board[r][c]?.p==="K"&&board[r][c].s===side){kr=r;kc=c;}return kr>=0&&attacked(kr,kc,side==="b"?"w":"b");}
+function render(){const el=$("board");el.innerHTML="";for(let r=0;r<9;r++)for(let c=0;c<9;c++){const btn=document.createElement("button");btn.className="cell";btn.setAttribute("aria-label",(9-c)+"筋 "+(r+1)+"段");if(lastMove&&((lastMove.from&&lastMove.from.r===r&&lastMove.from.c===c)||(lastMove.to.r===r&&lastMove.to.c===c)))btn.classList.add("last");if(selected&&selected.r===r&&selected.c===c)btn.classList.add("selected");if(legal.some(m=>m.r===r&&m.c===c))btn.classList.add("legal");const p=board[r][c];if(p){const span=document.createElement("span");span.className="piece"+(p.s==="w"?" white":"")+(promoted(p.p)?" promoted":"");span.textContent=glyph[p.p]||p.p;btn.appendChild(span);}btn.onclick=()=>selectCell(r,c);el.appendChild(btn);}
+for(const side of ["b","w"]){const h=$(side==="b"?"handB":"handW");h.innerHTML="";const title=side==="b"?"先手":"後手";const counts={};hands[side].forEach(p=>counts[p]=(counts[p]||0)+1);const order=["R","B","G","S","N","L","P"];order.forEach(p=>{if(!counts[p])return;const b=document.createElement("button");b.textContent=names[p]+"×"+counts[p];b.disabled=!gameStarted||turn!==role||role!==side;b.classList.toggle("active",selectedHand===p);b.onclick=()=>{selectedHand=p;selected=null;legal=dropMoves(p,side);render();};h.appendChild(b);});if(!h.children.length){const span=document.createElement("span");span.className="meta";span.textContent="なし";h.appendChild(span);}}
+$("turnLabel").textContent=(turn==="b"?"先手":"後手")+"の番"+(gameStarted&&turn===role?"（あなた）":"");$("gameMeta").textContent=gameStarted?"第"+moveNo+"手・"+(role==="b"?"先手側":"後手側"):"相手と接続して対局開始";$("moveHint").textContent=selectedHand?names[selectedHand]+"を打つ場所を選択":selected?"移動先を選択":"自分の駒を選んで移動先をタップ";}
+fresh();
+})();
+</script>
+</body>
+</html>
